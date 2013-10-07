@@ -1,5 +1,5 @@
 
-define(["backbone", "underscore", "js/models/metadata"], function(Backbone, _, MetadataModel) {
+define(["backbone", "underscore", "js/models/metadata", "date", "jquery.maskedinput"], function(Backbone, _, MetadataModel) {
     var Metadata = {};
 
     Metadata.Editor = Backbone.View.extend({
@@ -31,6 +31,9 @@ define(["backbone", "underscore", "js/models/metadata"], function(Backbone, _, M
                     }
                     else if(model.getType() === MetadataModel.LIST_TYPE) {
                         new Metadata.List(data);
+                    }
+                    else if(model.getType() === MetadataModel.ISO_TIME_TYPE) {
+                        new Metadata.IsoTime(data);
                     }
                     else {
                         // Everything else is treated as GENERIC_TYPE, which uses String editor.
@@ -369,6 +372,48 @@ define(["backbone", "underscore", "js/models/metadata"], function(Backbone, _, M
 
         enableAdd: function() {
             this.$el.find('.create-setting').removeClass('is-disabled');
+        }
+    });
+
+    Metadata.IsoTime = Metadata.AbstractEditor.extend({
+
+        events : {
+            "change input" : "updateModel",
+            "keypress .setting-input" : "showClearButton"  ,
+            "click .setting-clear" : "clear"
+        },
+
+        templateName: "metadata-string-entry",
+
+        render: function () {
+            Metadata.AbstractEditor.prototype.render.apply(this);
+
+            // Time format: HH:mm:ss
+            $.mask.definitions['h'] = '[0-2]';
+            $.mask.definitions['H'] = '[0-3]';
+            $.mask.definitions['m'] = $.mask.definitions['s'] = '[0-5]';
+            $.mask.definitions['M'] = $.mask.definitions['S'] = '[0-9]';
+            this.$el.find('#' + this.uniqueId).mask('hH:mM:sS', {placeholder: "0"});
+        },
+
+        getValueFromEditor : function () {
+            var $input = this.$el.find('#' + this.uniqueId),
+                value = $input.val(),
+                time = Date.parse(value);
+
+            if (time === null) {
+                value = null;
+            }
+
+            return value;
+        },
+
+        setValueInEditor : function (value) {
+            if (!value) {
+                value = '00:00:00';
+            }
+
+            this.$el.find('input').val(value);
         }
     });
 
