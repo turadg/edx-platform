@@ -1,10 +1,8 @@
 require(["domReady", "jquery", "underscore", "gettext", "js/views/feedback_notification", "js/views/feedback_prompt",
-         "js/utils/cancel_on_escape", "jquery.ui", "jquery.timepicker", "jquery.leanModal", "jquery.form", "jquery.smoothScroll"],
-    function(domReady, $, _, gettext, NotificationView, PromptView, CancelOnEscape) {
+    "js/utils/get_date", "jquery.ui", "jquery.leanModal", "jquery.form", "jquery.smoothScroll"],
+    function(domReady, $, _, gettext, NotificationView, PromptView, DateUtils) {
 
 var $body;
-var $modal;
-var $modalCover;
 var $newComponentItem;
 var $changedInput;
 var $spinner;
@@ -14,8 +12,6 @@ var $newComponentButton;
 
 domReady(function() {
     $body = $('body');
-    $modal = $('.history-modal');
-    $modalCover = $('.modal-cover');
 
     $newComponentItem = $('.new-component-item');
     $newComponentTypePicker = $('.new-component');
@@ -26,8 +22,6 @@ domReady(function() {
     $('.expand-collapse-icon').bind('click', toggleSubmodules);
     $('.visibility-options').bind('change', setVisibility);
 
-    $modal.bind('click', hideModal);
-    $modalCover.bind('click', hideModal);
 
     $body.on('click', '.embeddable-xml-input', function() {
         $(this).select();
@@ -94,14 +88,6 @@ domReady(function() {
     // tender feedback window scrolling
     $('a.show-tender').bind('click', smoothScrollTop);
 
-    // toggling overview section details
-    $(function() {
-        if ($('.courseware-section').length > 0) {
-            $('.toggle-button-sections').addClass('is-shown');
-        }
-    });
-    $('.toggle-button-sections').bind('click', toggleSections);
-
     // autosave when leaving input field
     $body.on('change', '.subsection-display-name-input', saveSubsection);
     $('.subsection-display-name-input').each(function() {
@@ -126,12 +112,7 @@ domReady(function() {
     // section date setting
     $('.set-publish-date').bind('click', setSectionScheduleDate);
     $('.edit-section-start-cancel').bind('click', cancelSetSectionScheduleDate);
-    $('.edit-section-start-save').bind('click', saveSetSectionScheduleDate);
 
-    $body.on('click', '.section-published-date .edit-button', editSectionPublishDate);
-    $body.on('click', '.section-published-date .schedule-button', editSectionPublishDate);
-    $body.on('click', '.edit-subsection-publish-settings .save-button', saveSetSectionScheduleDate);
-    $body.on('click', '.edit-subsection-publish-settings .cancel-button', hideModal);
     $body.on('change', '.edit-subsection-publish-settings .start-date', function() {
         if ($('.edit-subsection-publish-settings').find('.start-time').val() == '') {
             $('.edit-subsection-publish-settings').find('.start-time').val('12:00am');
@@ -171,44 +152,6 @@ function linkNewWindow(e) {
     e.preventDefault();
 }
 
-function toggleSections(e) {
-    e.preventDefault();
-
-    $section = $('.courseware-section');
-    sectionCount = $section.length;
-    $button = $(this);
-    $labelCollapsed = $('<i class="icon-arrow-up"></i> <span class="label">' +
-        gettext('Collapse All Sections') + '</span>');
-    $labelExpanded = $('<i class="icon-arrow-down"></i> <span class="label">' +
-        gettext('Expand All Sections') + '</span>');
-
-    var buttonLabel = $button.hasClass('is-activated') ? $labelCollapsed : $labelExpanded;
-    $button.toggleClass('is-activated').html(buttonLabel);
-
-    if ($button.hasClass('is-activated')) {
-        $section.addClass('collapsed');
-        // first child in order to avoid the icons on the subsection lists which are not in the first child
-        $section.find('header .expand-collapse-icon').removeClass('collapse').addClass('expand');
-    } else {
-        $section.removeClass('collapsed');
-        // first child in order to avoid the icons on the subsection lists which are not in the first child
-        $section.find('header .expand-collapse-icon').removeClass('expand').addClass('collapse');
-    }
-}
-
-function editSectionPublishDate(e) {
-    e.preventDefault();
-    $modal = $('.edit-subsection-publish-settings').show();
-    $modal.attr('data-id', $(this).attr('data-id'));
-    $modal.find('.start-date').val($(this).attr('data-date'));
-    $modal.find('.start-time').val($(this).attr('data-time'));
-    if ($modal.find('.start-date').val() == '' && $modal.find('.start-time').val() == '') {
-        $modal.find('.save-button').hide();
-    }
-    $modal.find('.section-name').html('"' + $(this).closest('.courseware-section').find('.section-name-span').text() + '"');
-    $modalCover.show();
-}
-
 function syncReleaseDate(e) {
     e.preventDefault();
     $(this).closest('.notice').hide();
@@ -216,21 +159,6 @@ function syncReleaseDate(e) {
     $("#start_time").val("");
 }
 
-function getDatetime(datepickerInput, timepickerInput) {
-    // given a pair of inputs (datepicker and timepicker), return a JS Date
-    // object that corresponds to the datetime that they represent. Assume
-    // UTC timezone, NOT the timezone of the user's browser.
-    var date = $(datepickerInput).datepicker("getDate");
-    var time = $(timepickerInput).timepicker("getTime");
-    if(date && time) {
-        return new Date(Date.UTC(
-            date.getFullYear(), date.getMonth(), date.getDate(),
-            time.getHours(), time.getMinutes()
-        ));
-    } else {
-        return null;
-    }
-}
 
 function autosaveInput(e) {
     var self = this;
@@ -272,7 +200,7 @@ function saveSubsection() {
     // get datetimes for start and due, stick into metadata
     _(["start", "due"]).each(function(name) {
 
-        var datetime = getDatetime(
+        var datetime = DateUtils(
             document.getElementById(name+"_date"),
             document.getElementById(name+"_time")
         );
@@ -381,19 +309,6 @@ function _deleteItem($el, type) {
     confirm.show();
 }
 
-function hideModal(e) {
-    if (e) {
-        e.preventDefault();
-    }
-    // Unit editors do not want the modal cover to hide when users click outside
-    // of the editor. Users must press Cancel or Save to exit the editor.
-    // module_edit adds and removes the "is-fixed" class.
-    if (!$modalCover.hasClass("is-fixed")) {
-        $(".modal, .edit-subsection-publish-settings").hide();
-        $modalCover.hide();
-    }
-}
-
 function toggleSubmodules(e) {
     e.preventDefault();
     $(this).toggleClass('expand').toggleClass('collapse');
@@ -404,7 +319,7 @@ function setVisibility(e) {
     $(this).find('.checked').removeClass('checked');
     $(e.target).closest('.option').addClass('checked');
 }
-
+        
 function showDateSetter(e) {
     e.preventDefault();
     var $block = $(this).closest('.due-date-input');
@@ -422,7 +337,6 @@ function removeDateSetter(e) {
     $block.find('.time').val('');
 }
 
-
 function hideNotification(e) {
     (e).preventDefault();
     $(this).closest('.wrapper-notification').removeClass('is-shown').addClass('is-hiding').attr('aria-hidden', 'true');
@@ -432,7 +346,7 @@ function hideAlert(e) {
     (e).preventDefault();
     $(this).closest('.wrapper-alert').removeClass('is-shown');
 }
-
+        
 function addNewSection(e) {
     e.preventDefault();
 
@@ -540,65 +454,6 @@ function cancelSetSectionScheduleDate(e) {
     $(this).parent().siblings("h4").show();
 }
 
-function saveSetSectionScheduleDate(e) {
-    e.preventDefault();
-
-    var datetime = getDatetime(
-        $('.edit-subsection-publish-settings .start-date'),
-        $('.edit-subsection-publish-settings .start-time')
-    );
-
-    var id = $modal.attr('data-id');
-
-    analytics.track('Edited Section Release Date', {
-        'course': course_location_analytics,
-        'id': id,
-        'start': datetime
-    });
-
-    var saving = new NotificationView.Mini({
-        title: gettext("Saving&hellip;")
-    });
-    saving.show();
-    // call into server to commit the new order
-    $.ajax({
-        url: "/save_item",
-        type: "POST",
-        dataType: "json",
-        contentType: "application/json",
-        data: JSON.stringify({
-            'id': id,
-            'metadata': {
-                'start': datetime
-            }
-        })
-    }).success(function() {
-        var pad2 = function(number) {
-            // pad a number to two places: useful for formatting months, days, hours, etc
-            // when displaying a date/time
-            return (number < 10 ? '0' : '') + number;
-        };
-
-        var $thisSection = $('.courseware-section[data-id="' + id + '"]');
-        var html = _.template(
-            '<span class="published-status">' +
-                '<strong>' + gettext("Will Release:") + '&nbsp;</strong>' +
-                gettext("{month}/{day}/{year} at {hour}:{minute} UTC") +
-            '</span>' +
-            '<a href="#" class="edit-button" data-date="{month}/{day}/{year}" data-time="{hour}:{minute}" data-id="{id}">' +
-                gettext("Edit") +
-            '</a>',
-            {year: datetime.getUTCFullYear(), month: pad2(datetime.getUTCMonth() + 1), day: pad2(datetime.getUTCDate()),
-             hour: pad2(datetime.getUTCHours()), minute: pad2(datetime.getUTCMinutes()),
-             id: id},
-            {interpolate: /\{(.+?)\}/g});
-        $thisSection.find('.section-published-date').html(html);
-        hideModal();
-        saving.hide();
-    });
-}
-    // Add to window object for unit test (overview_spec).
-    window.saveSetSectionScheduleDate = saveSetSectionScheduleDate;
     window.deleteSection = deleteSection;
 
 }); // end require()
