@@ -171,7 +171,8 @@ def _section_send_email(course_id, access, course):
         'section_display_name': _('Email'),
         'access': access,
         'send_email': reverse('send_email', kwargs={'course_id': course_id}),
-        'editor': email_editor
+        'editor': email_editor,
+        'email_background_tasks_url': reverse('list_background_email_tasks', kwargs={'course_id': course_id}),
     }
     return section_data
 

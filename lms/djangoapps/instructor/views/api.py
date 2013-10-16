@@ -643,11 +643,17 @@ def rescore_problem(request, course_id):
 
 @ensure_csrf_cookie
 @cache_control(no_cache=True, no_store=True, must_revalidate=True)
-@require_level('instructor')
-def list_instructor_tasks(request, course_id):
+def list_background_email_tasks(request, course_id):
+    """
+    List background email tasks.
+    """
+    return list_instructor_tasks(request, course_id, 'bulk_course_email')
+
+@ensure_csrf_cookie
+@cache_control(no_cache=True, no_store=True, must_revalidate=True)
+def list_instructor_tasks(request, course_id, task_type=None):
     """
     List instructor tasks.
-    Limited to instructor access.
 
     Takes optional query paremeters.
         - With no arguments, lists running tasks.
@@ -668,10 +674,16 @@ def list_instructor_tasks(request, course_id):
     if problem_urlname:
         module_state_key = _msk_from_problem_urlname(course_id, problem_urlname)
         if student:
+            # Specifying for a single student's history on this problem
             tasks = instructor_task.api.get_instructor_task_history(course_id, module_state_key, student)
         else:
+            # Specifying for single problem's history
             tasks = instructor_task.api.get_instructor_task_history(course_id, module_state_key)
+    elif task_type:
+        # Specifying for the history of a single task type
+        tasks = instructor_task.api.get_instructor_task_history(course_id, task_type=task_type)
     else:
+        # If no problem or student or task_type, just get currently running tasks
         tasks = instructor_task.api.get_running_instructor_tasks(course_id)
 
     def extract_task_features(task):
