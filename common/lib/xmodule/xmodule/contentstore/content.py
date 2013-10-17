@@ -6,6 +6,7 @@ XASSET_THUMBNAIL_TAIL_NAME = '.jpg'
 import os
 import logging
 import StringIO
+from urlparse import urlparse, urljoin
 
 from xmodule.modulestore import Location
 from .django import contentstore
@@ -123,10 +124,20 @@ class StaticContent(object):
         """
         Returns a path to a piece of static content when we are provided with a filepath and
         a course_id
+        Includes a check for url having a parameter rather than being a static asset.
         """
         org, course_num, __ = course_id.split("/")
-        loc = StaticContent.compute_location(org, course_num, path)
-        return StaticContent.get_url_path_from_location(loc)
+        
+        # Check if this is not a static asset but a url with params
+        params = urlparse(path)[4]
+        if params:
+            org, name, __ = course_id.split('/')
+            part = '/c4x/' + org + '/' + course_num + '/asset/'
+            return urljoin(part, path)        
+        else:
+            loc = StaticContent.compute_location(org, course_num, path)
+            return StaticContent.get_url_path_from_location(loc)
+
 
     def stream_data(self):
         yield self._data
