@@ -800,6 +800,7 @@ class CourseEnrollment(models.Model):
 
         `course_id` is our usual course_id string (e.g. "edX/Test101/2013_Fall)
         """
+        from nose.tools import set_trace; set_trace()
         try:
             record = CourseEnrollment.objects.get(user=user, course_id=course_id)
             record.is_active = False
