@@ -21,7 +21,7 @@ class CourseModeModelTest(TestCase):
         self.course_id = 'TestCourse'
         CourseMode.objects.all().delete()
 
-    def create_mode(self, mode_slug, mode_name, min_price=0, suggested_prices='', currency='usd'):
+    def create_mode(self, mode_slug, mode_name, min_price=0, suggested_prices='', currency='usd',date=datetime.date(1990,1,1)):
         """
         Create a new course mode
         """
@@ -31,7 +31,8 @@ class CourseModeModelTest(TestCase):
             mode_slug=mode_slug,
             min_price=min_price,
             suggested_prices=suggested_prices,
-            currency=currency
+            currency=currency,
+            expiration_date=date,
         )
 
     def test_modes_for_course_empty(self):
@@ -111,3 +112,9 @@ class CourseModeModelTest(TestCase):
 
         modes = CourseMode.modes_for_course('second_test_course')
         self.assertEqual([CourseMode.DEFAULT_MODE], modes)
+
+    def test_refund_expiration_date(self):
+        self.create_mode('verified', 'Verified Certificate')
+        modes = CourseMode.modes_for_course(self.course_id)
+        mode = Mode(u'verified', u'Verified Certificate', 0, '', 'usd')
+        assertEqual(refund_expiration_date(self.course_id, 'verified'),datetime.date(1990,1,1))

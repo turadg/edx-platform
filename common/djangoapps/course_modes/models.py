@@ -102,7 +102,6 @@ class CourseMode(models.Model):
         no longer possible.  Note that this is currently set to be identical to the expiration date for
         verified cert signups, but this could be changed in the future
         """
-        from nose.tools import set_trace; set_trace()
         return cls.mode_for_course(course_id,mode_slug).expiration_date
 
     def __unicode__(self):

@@ -9,7 +9,7 @@ from boto.exception import BotoServerError  # this is a super-class of SESError 
 
 from django.db import models
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import (ObjectDoesNotExist, MultipleObjectsReturned)
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
@@ -22,7 +22,6 @@ from xmodule.modulestore.exceptions import ItemNotFoundError
 
 from course_modes.models import CourseMode
 from mitxmako.shortcuts import render_to_string
-from student.views import course_from_id
 from student.models import CourseEnrollment
 from verify_student.models import SoftwareSecurePhotoVerification
 
@@ -34,11 +33,16 @@ log = logging.getLogger("shoppingcart")
 ORDER_STATUSES = (
     ('cart', 'cart'),
     ('purchased', 'purchased'),
-    ('refunded', 'refunded'),  # Not used for now
+    ('refunded', 'refunded'),
 )
 
 # we need a tuple to represent the primary key of various OrderItem subclasses
 OrderItemSubclassPK = namedtuple('OrderItemSubclassPK', ['cls', 'pk'])  # pylint: disable=C0103
+
+def course_from_id(course_id):
+    """Return the CourseDescriptor corresponding to this course_id"""
+    course_loc = CourseDescriptor.id_to_location(course_id)
+    return modulestore().get_instance(course_id, course_loc)
 
 
 class Order(models.Model):
@@ -397,6 +401,22 @@ class CertificateItem(OrderItem):
     course_id = models.CharField(max_length=128, db_index=True)
     course_enrollment = models.ForeignKey(CourseEnrollment)
     mode = models.SlugField()
+
+    @classmethod
+    def refund_cert(cls, target_user, target_course_id):
+        from nose.tools import set_trace; set_trace()
+        try:
+            target_cert = CertificateItem.objects.get(course_id=target_course_id,user_id=target_user)
+            from pudb import set_trace; set_trace()
+            target_cert.status = 'refunded'
+            target_order = CertificateItem.order
+            target_order.status = 'refunded'
+            return target_order
+        except MultipleObjectsReturned:
+            log.exception("Multiple entries for single verified cert found")
+        except ObjectDoesNotExist:
+            # todo log properly
+            log.exception("No certificate found")
 
     @classmethod
     @transaction.commit_on_success
