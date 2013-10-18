@@ -1,5 +1,5 @@
 
-define(["backbone", "underscore", "js/models/metadata", "jquery.maskedinput"], function(Backbone, _, MetadataModel) {
+define(["backbone", "underscore", "js/models/metadata", "jquery.maskedinput"], function(Backbone, _, MetadataModel, mask) {
     var Metadata = {};
 
     Metadata.Editor = Backbone.View.extend({
