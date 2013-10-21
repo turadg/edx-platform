@@ -32,8 +32,8 @@ define(["backbone", "underscore", "js/models/metadata", "jquery.maskedinput"], f
                     else if(model.getType() === MetadataModel.LIST_TYPE) {
                         new Metadata.List(data);
                     }
-                    else if(model.getType() === MetadataModel.ISO_TIME_TYPE) {
-                        new Metadata.IsoTime(data);
+                    else if(model.getType() === MetadataModel.RELATIVE_TIME_TYPE) {
+                        new Metadata.RelativeTime(data);
                     }
                     else {
                         // Everything else is treated as GENERIC_TYPE, which uses String editor.
@@ -375,7 +375,7 @@ define(["backbone", "underscore", "js/models/metadata", "jquery.maskedinput"], f
         }
     });
 
-    Metadata.IsoTime = Metadata.AbstractEditor.extend({
+    Metadata.RelativeTime = Metadata.AbstractEditor.extend({
 
         events : {
             "change input" : "updateModel",
