@@ -85,6 +85,31 @@ class IntervalManager
     @intervalID = null
 
 
+class PendingInstructorTasks
+  ### Pending Instructor Tasks Section ####
+  constructor: (@$section) ->
+    # Currently running tasks
+    @$table_running_tasks = @$section.find ".running-tasks-table"
+
+    # start polling for task list
+    # if the list is in the DOM
+    if @$table_running_tasks.length > 0
+      # reload every 20 seconds.
+      TASK_LIST_POLL_INTERVAL = 20000
+      @reload_running_tasks_list()
+      @task_poller = IntervalManager() TASK_LIST_POLL_INTERVAL, =>
+        @reload_running_tasks_list()
+
+  # Populate the running tasks list
+  reload_running_tasks_list: =>
+    list_endpoint = @$table_running_tasks.data 'endpoint'
+    $.ajax
+      dataType: 'json'
+      url: list_endpoint
+      success: (data) => create_task_list_table @$table_running_tasks, data.tasks
+      error: std_ajax_err => console.warn "error listing all instructor tasks"
+    ### /Pending Instructor Tasks Section ####
+
 # export for use
 # create parent namespaces if they do not already exist.
 # abort if underscore can not be found.
@@ -96,3 +121,4 @@ if _?
     std_ajax_err: std_ajax_err
     IntervalManager: IntervalManager
     create_task_list_table: create_task_list_table
+    PendingInstructorTasks: PendingInstructorTasks
