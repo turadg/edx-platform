@@ -20,6 +20,7 @@ from xmodule.contentstore.django import contentstore
 from xmodule.modulestore.django import modulestore
 from xmodule.modulestore.xml_importer import import_from_xml
 from xmodule.modulestore.django import loc_mapper
+from xmodule.modulestore.mongo.base import location_to_query
 
 
 class AssetsTestCase(CourseTestCase):
@@ -175,7 +176,7 @@ class TestAssetIndex(CourseTestCase):
             XASSET_LOCATION_TAG, category='asset', course=self.course.location.course, org=self.course.location.org
         )
         # purge existing entries (a bit brutal but hopefully tests are independent enuf to not trip on this)
-        cstore.fs_files.remove(course_filter.dict())
+        cstore.fs_files.remove(location_to_query(course_filter))
         base_entry = {
             'displayname': 'foo.jpg',
             'chunkSize': 262144,
