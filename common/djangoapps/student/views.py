@@ -424,26 +424,17 @@ def change_enrollment(request):
             reverse("shoppingcart.views.show_cart")
         )
 
-    # pre-me editing it, all this does is switch the user to inactive and
-    # make a log entry saying they unenrolled
     elif action == "unenroll":
-        try:
-            # did they sign up for verified certs?
-            verified = CourseEnrollment.enrollment_mode_for_user(user, course_id)
-            # has the expiration date for refunds passed?
-            if (date.today() <= CourseMode.refund_expiration_date(course_id,'verified')) and (verified == 'verified'):
-                # send an email
-                # change the modal
-                # compose email
-                subject = "testsubject"
-                # todo: make message include important info
-                message = "testmessage"
+        verified = CourseEnrollment.enrollment_mode_for_user(user, course_id)
+        # did they sign up for verified certs?
+        if(verified):
+            # If the expiration date has not passed, refund them.
+            if date.today() <= CourseMode.refund_expiration_date(course_id,'verified'):
+                subject = _("[Refund] User-Requested Refund")
+                # todo: make this reference templates/student/refund_email.html
+                message = "Important info here."
                 to_email = [settings.PAYMENT_SUPPORT_EMAIL]
-                # actually fix this later
-                from_email = "lol@edx.org"
-
-                # todo: is there some setting i should check here? about emails being turned on and whatnot?
-                # todo: check that these FROM_EMAIL, TO_EMAIL seem legit, abstract them into settings
+                from_email = "support@edx.org"
                 try:
                     send_mail(subject,message, from_email, to_email, fail_silently=False)
                 except:
@@ -452,19 +443,19 @@ def change_enrollment(request):
                     return HttpResponse(json.dumps(js))
                 # email has been sent, let's deal with the order now
                 CertificateItem.refund_cert(user, course_id)
-            CourseEnrollment.unenroll(user, course_id)
+            # If the expiration date has passed, warn them before unregistering.
+            else:
+                print "TODO: warn them"
+        CourseEnrollment.unenroll(user, course_id)
 
-            org, course_num, run = course_id.split("/")
-            dog_stats_api.increment(
-                "common.student.unenrollment",
-                tags=["org:{0}".format(org),
-                      "course:{0}".format(course_num),
-                      "run:{0}".format(run)]
-            )
-
-            return HttpResponse()
-        except CourseEnrollment.DoesNotExist:
-            return HttpResponseBadRequest(_("You are not enrolled in this course"))
+        org, course_num, run = course_id.split("/")
+        dog_stats_api.increment(
+           "common.student.unenrollment",
+            tags=["org:{0}".format(org),
+                  "course:{0}".format(course_num),
+                  "run:{0}".format(run)]
+        )
+        return HttpResponse()
     else:
         return HttpResponseBadRequest(_("Enrollment action is invalid"))
 

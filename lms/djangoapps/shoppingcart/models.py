@@ -404,19 +404,21 @@ class CertificateItem(OrderItem):
 
     @classmethod
     def refund_cert(cls, target_user, target_course_id):
-        from nose.tools import set_trace; set_trace()
         try:
-            target_cert = CertificateItem.objects.get(course_id=target_course_id,user_id=target_user)
+            target_cert = CertificateItem.objects.get(course_id=target_course_id, user_id=target_user, status='purchased', mode='verified')
             from pudb import set_trace; set_trace()
             target_cert.status = 'refunded'
-            target_order = CertificateItem.order
-            target_order.status = 'refunded'
-            return target_order
+            # todo return success
+            return
         except MultipleObjectsReturned:
+            # this seems like a thing that shouldn't happen
             log.exception("Multiple entries for single verified cert found")
+            # but we can recover; select one item and refund it
+            # todo
         except ObjectDoesNotExist:
             # todo log properly
             log.exception("No certificate found")
+            # handle the exception
 
     @classmethod
     @transaction.commit_on_success
