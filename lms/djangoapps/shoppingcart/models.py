@@ -406,7 +406,6 @@ class CertificateItem(OrderItem):
     def refund_cert(cls, target_user, target_course_id):
         try:
             target_cert = CertificateItem.objects.get(course_id=target_course_id, user_id=target_user, status='purchased', mode='verified')
-            from pudb import set_trace; set_trace()
             target_cert.status = 'refunded'
             # todo return success
             return
