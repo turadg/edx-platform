@@ -41,6 +41,14 @@
                     expect($('.video')).toContain('a.hide-subtitles');
                 });
 
+                it('add ARIA attributes to caption control', function () {
+                    expect($('a.hide-subtitles')).toHaveAttr({
+                        'role': 'button',
+                        'title': 'Turn off captions',
+                        'aria-disabled': 'false'
+                    });
+                });
+
                 it('fetch the caption', function () {
                     waitsFor(function () {
                         if (videoCaption.loaded === true) {
@@ -633,6 +641,12 @@
                 it('hide the caption', function () {
                     expect(state.el).toHaveClass('closed');
                 });
+
+                it('set title of caption control', function () {
+                    expect($('a.hide-subtitles')).toHaveAttr(
+                        'title', 'Turn on captions'
+                    );
+                });
             });
 
             describe('when the caption is hidden', function () {
@@ -652,6 +666,12 @@
 
                 it('show the caption', function () {
                     expect(state.el).not.toHaveClass('closed');
+                });
+
+                it('set title of caption control', function () {
+                    expect($('a.hide-subtitles')).toHaveAttr(
+                        'title', 'Turn off captions'
+                    );
                 });
 
                 it('scroll the caption', function () {
