@@ -42,6 +42,9 @@ class OrderTest(ModuleStoreTestCase):
         cart2 = Order.get_cart_for_user(user=self.user)
         self.assertEquals(cart2.orderitem_set.count(), 1)
 
+        # todo remove
+        assertEqual(1,0)
+
     def test_user_cart_has_items(self):
         anon = AnonymousUser()
         self.assertFalse(Order.user_cart_has_items(anon))
@@ -372,6 +375,8 @@ class CertificateItemTest(ModuleStoreTestCase):
         # now that it's there, let's try refunding it
         order = CertificateItem.refund_cert(target_user=self.user, target_course_id=self.course_id)
         self.assertEquals(order.status,'refunded')
+
+        1/0
 
         print "TODO"
 
